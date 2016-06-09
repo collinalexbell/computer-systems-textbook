@@ -5,8 +5,9 @@
 
 (def ex2-2 [[1 0 1 1] [1 1 0 1 1] [1 1 1 0 1 1]])
 
-
+(def bits-to-unsigned twos-complement-pos)
 (defn twos-complement-pos [bit-vector]
+;Will convert a bit vector of anysize
   (let [rev-vec (reverse bit-vector)]
   (loop [power 0
          rv    0]
@@ -24,7 +25,7 @@
 (defn twos-complement-neg [bit-vector]
   (let [neg-val (Math/pow 2 (- (count bit-vector) 1))]
     (- 
-      (twos-complement-pos
+      (bits-to-unsigned
         ;invert the vector
         ;(map #(if (= 1 %1) 0 1) (rest bit-vector)))
         (rest bit-vector))
@@ -465,5 +466,106 @@
        (to-decimal  input)])
    data-2-45))
 
+;Practice Problem 2-46
+;The imprecision of floating-point arithmetic can have disastrous effects. On Febru- ary 25, 1991, during the first Gulf War, an American Patriot Missile battery in Dharan, Saudi Arabia, failed to intercept an incoming Iraqi Scud missile. The Scud struck an American Army barracks and killed 28 soldiers. The U.S. General Accounting Office (GAO) conducted a detailed analysis of the failure [72] and de- termined that the underlying cause was an imprecision in a numeric calculation. In this exercise, you will reproduce part of the GAO’s analysis.
+;The Patriot system contains an internal clock, implemented as a counter
+;that is incremented every 0.1 seconds. To determine the time in seconds, the
+;program would multiply the value of this counter by a 24-bit quantity that was
+;a fractional binary approximation to 1 . In particular, the binary representation 1 10
+;of 10 is the nonterminating sequence 0.000110011[0011] . . .2, where the portion in brackets is repeated indefinitely. The program approximated 0.1, as a value x, by considering just the first 23 bits of the sequence to the right of the binary point: x = 0.00011001100110011001100. (See Problem 2.51 for a discussion of how they could have approximated 0.1 more precisely.)
 
-￼
+;A?) What is the binary representation of 0.1 − x?
+;A!) .1 - x = .0000000000000000000000011001100110011001100110011001100110011001100
+
+;B?) What is the approximate decimal value of 0.1 − x?
+(defn solve-2-46-b []
+  (to-decimal {:type :binary :val "0.0000000000000000000000011001100110011001100110011001100110011001100"}))
+;B!) 9.536743164061958E-8
+
+;C?) The clock starts at 0 when the system is first powered up and keep scounting up from there. In this case, the system had been running for around 100 hours. What was the difference between the actual time and the time computed by the software?
+
+(defn solve-2-46-c []
+  (* 60 60 100 9.536743164061958E-8))
+;C!) .034 seconds
+
+
+;D?)The system predicts where an incoming missile will appear based on its velocity and the time of the last radar detection. Given that a Scud travels at around 2000 meters per second, how far off was its prediction?
+(defn solve-2-46-d []
+  ;page 137
+  ;
+  (* 2000 (solve-2-46-c)))
+
+;D!) 68.66455 meters!
+
+
+
+;Problem 2.47
+
+
+(def vars-2-47
+  [:e     "The value represented by considering the exponent field to be an unsigned integer"
+   :E     "The value of the exponent after biasing"
+   :2E    "The numeric weight of the exponent"
+   :f     "The value of the fraction"
+   :M     "The value of the significand"
+   :2ExM  "The (unreduced) fractional value of the number"])
+
+
+(defn enumerate-bits [n]
+  (if  (= n 1)
+    ;base case, n = 1
+    [[0] [1]]
+
+    ;normal-case, n > 1
+    ;foreach bit string in enumerate-bits (- n 1) create 2 new bitstrings conjing - and 1
+    (reduce
+     (fn [strings assembled-string]
+       (conj strings
+             (conj assembled-string 0)
+             (conj assembled-string 1)))
+     [] 
+     (enumerate-bits (- n 1)))))
+
+;Defaults bit counts for floats in this problem
+(def float-configuration {:s 1 :e 2 :f 2})
+
+(defn grab-sign
+  "Will grab the sign portion of a float bitstring"
+  [bit-string]
+  ())
+
+(defn grab-exponent
+  "Will grab the exponent portion of a float bitstring"
+  [bit-string]
+  (subvec
+   bit-string
+   (float-configuration :s)
+   (+ (float-configuration :s) (float-configuration :e))))
+
+(defn grab-fraction
+  "Will grab the exponent portion of a float bitstring"
+  [bit-string]
+  (subvec
+   bit-string
+   (+ (float-configuration :s) (float-configuration :e))))
+
+(defn get-float-category [bit-string]
+  (let
+      
+      [all-1s-exponent
+       (= 1 (reduce bit-and (grab-exponent bit-string)))
+
+       all-0s-exponent
+       (= 0 (reduce bit-or (grab-exponent bit-string)))
+
+       all-0s-fraction
+       (= 0 (reduce bit-or (grab-fraction bit-string)))
+       ]
+
+    (if (not (or all-1s-exponent all-0s-exponent))
+      :normalized-values
+      (if all-0s-exponent
+        :denormalized-values
+        (if all-0s-fraction
+          :infinity
+          :nan)))))
