@@ -12,7 +12,7 @@
   (loop [power 0
          rv    0]
     (if (= power (count bit-vector))
-     rv 
+     (int rv) 
      (recur
       ;power
       (+ power 1)
@@ -527,12 +527,14 @@
      (enumerate-bits (- n 1)))))
 
 ;Defaults bit counts for floats in this problem
-(def float-configuration {:s 1 :e 2 :f 2})
+(def float-configuration {:s 1 :e 4 :f 3})
 
 (defn grab-sign
   "Will grab the sign portion of a float bitstring"
   [bit-string]
-  ())
+  (if (= (first bit-string) 0)
+    1
+    -1))
 
 (defn grab-exponent
   "Will grab the exponent portion of a float bitstring"
@@ -569,3 +571,58 @@
         (if all-0s-fraction
           :infinity
           :nan)))))
+
+
+(defn bias-exponent [exp cat]
+  (let [bias (- (Math/pow 2 (-  (float-configuration :e) 1)) 1)]
+    (if (= cat :denormalized-values)
+      (- 1 bias)
+      (- exp bias))))
+
+(defn compute-significand [frac cat]
+  (if (= cat :denormalized-values)
+    frac
+    (+ 1 frac)))
+
+(defn compute-v [twoExM cat s]
+  (if (contains? #{:normalized-values :denormalized-values} cat)
+    (* s twoExM)
+    cat))
+  
+
+
+(defn compute-float-table-row [bit-string]
+  (let
+      [cat    (get-float-category bit-string)
+       s      (grab-sign bit-string)
+       e      (bits-to-unsigned (grab-exponent bit-string))
+       E      (bias-exponent e cat)
+       twoE   (Math/pow 2 E)
+       f      (to-decimal {:type :binary :val  (str "0." (apply str (grab-fraction bit-string)))})
+       M      (compute-significand f cat)
+       twoExM (* twoE M)
+       V      (compute-v twoExM cat s)]
+   (assoc
+    {}
+    :vec   bit-string
+    :cat   cat
+    :s     s
+    :e     e
+    :E     E
+    :2E    twoE
+    :f     f
+    :M     M
+    :2ExM  twoExM
+    :V     V)))
+
+
+(defn complete-whole-float-table
+  [config]
+  (def float-configuration config)
+  (map
+   #(compute-float-table-row %1)
+   (enumerate-bits (+ (:s config) (:e config) (:f config)))))
+
+;(complete-whole-float-table {:s 1 :e 2 :f 2}) ;solves the problem!
+
+
