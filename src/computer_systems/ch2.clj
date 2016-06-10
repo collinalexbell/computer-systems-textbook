@@ -626,3 +626,35 @@
 ;(complete-whole-float-table {:s 1 :e 2 :f 2}) ;solves the problem!
 
 
+;Practice Problem 2.48
+;As mentioned in Problem 2.6, the integer 3,510,593 has hexadecimal representa- tion 0x00359141, while the single-precision, floating-point number 3510593.0 has hexadecimal representation 0x4A564504. Derive this floating-point representa- tion and explain the correlation between the bits of the integer and floating-point representations.
+
+(defn get-significant-bits [bit-vec]
+  (subvec (vec bit-vec) (.indexOf (apply str bit-vec) "1")))
+
+(defn right-pad [bit-vec size]
+  (concat bit-vec (take (- size (count bit-vec)) (repeat 0))))
+
+
+
+(defn get-float-bits-from-number [n]
+  (let
+      [non-padded-f
+       (rest ;drop the first bit (it is a 1), this is because it is always a 1 and can be implied
+        (get-significant-bits 
+         (decimal-to-binary n 32)))
+       
+       pow (count non-padded-f)]
+
+    (concat
+     (if (< n 0) [1] [0])
+     (decimal-to-binary (+ 127 pow) 8)
+     (right-pad non-padded-f 23))))
+
+
+;(get-float-bits-from-number 3510593)
+;=>(0 1 0 0 1 0 1 0 0 1 0 1 0 1 1 0 0 1 0 0 0 1 0 1 0 0 0 0 0 1 0 0)
+;(hex-to-binary "00359141")
+;=>(0 0 0 0 0 0 0 0 0 0 1 1 0 1 0 1 1 0 0 1 0 0 0 1 0 1 0 0 0 0 0 1)
+
+; 101011001000101000001 is the float portion and it is the same the first 1 on the hex representation is dropped due to its implicitness
