@@ -1,0 +1,79 @@
+* Ch3
+
+
+
+** 3.4.1 Operand Specifiers
+*** Problem 3.1
+		| Address | Value |   | Register | Value |
+		| +++++++ | +++++ |   | ++++++++ | +++++ |
+		|   0x100 |  0xFF |   | %eax     | 0x100 |
+		|   0x104 |  0xAB |   | %ecx     |   0x1 |
+		|   0x108 |  0x13 |   | %edx     |   0x3 |
+		|   0x10C |  0x11 |   |          |       |
+
+**** Fill in the following table showing the values for the indicated operands:
+		 | Operand        | My Value | Correct Value | Correct? |
+		 | -------------- | -------- | ------------- | -------- |
+		 | %eax           |    0x100 |         0x100 | Yes      |
+		 | 0x104          |     0xAB |          0xAB | Yes      |
+		 | $0x108         |    0x108 |         0x108 | Yes      |
+		 | (%eax)         |     0xFF |          0xFF | Yes      |
+		 | 4(%eax)        |     0xAB |          0xAB | Yes      |
+		 | 9(%eax,%edx)   |     0x11 |          0x11 | Yes      |
+		 | 260(%ecx,%edx) |     0x13 |          0x13 | Yes      |
+		 | 0xFC(,%ecx,4)  |     0x13 |          0xFF | No       |
+		 | (%eax,%edx,4)  |     0x11 |          0x11 | Yes      |
+
+**** Workspace
+	
+***** 260(%ecx,%edx)
+			#+BEGIN_SRC sh
+			printf "%x\n" 260
+			#+END_SRC
+
+			#+RESULTS:
+			: 104
+
+***** 0xFC(,%ecx,4)
+			#+BEGIN_SRC clojure
+			(format "%x" (+ 0xFC (* 4 0x3)))
+			#+END_SRC
+
+			#+RESULTS:
+			: 108
+
+***** (%eax,%edx,4)
+			#+BEGIN_SRC clojure
+      (format "%x" (+ 0x100 (* 0x3 4)))
+			#+END_SRC
+
+			#+RESULTS:
+			: 10c
+			
+**** Corrections
+***** 0xFC(,%ecx,4)
+			#+BEGIN_SRC clojure
+			(format "%x" (+ 0xFC (* 4 0x1)))
+			#+END_SRC
+
+			#+RESULTS:
+			: 100
+
+			Val for 0x100 = 0xFF
+
+
+
+** 3.4.2 Data Movement Instructions
+	[[~/computer-systems/imgs/stack-pointer.png]]
+
+*** Why is the stack pointer incrimented by 4?
+
+	 #+BEGIN_SRC clojure
+	 (/ 32 8)
+	 #+END_SRC
+
+	 #+RESULTS:
+	 : 4
+	 ..32 bits divided into bytes equals 4 bytes per 32bit word.
+	 Therefore an increment in 4 bytes is an increment in a 32bit word.
+	 

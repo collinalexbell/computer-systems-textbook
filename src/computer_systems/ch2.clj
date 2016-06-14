@@ -5,7 +5,6 @@
 
 (def ex2-2 [[1 0 1 1] [1 1 0 1 1] [1 1 1 0 1 1]])
 
-(def bits-to-unsigned twos-complement-pos)
 (defn twos-complement-pos [bit-vector]
 ;Will convert a bit vector of anysize
   (let [rev-vec (reverse bit-vector)]
@@ -21,7 +20,7 @@
       (+ rv (*
              (nth rev-vec power) ;is the bit positive
              (Math/pow 2  power))))))))
-
+(def bits-to-unsigned twos-complement-pos)
 (defn twos-complement-neg [bit-vector]
   (let [neg-val (Math/pow 2 (- (count bit-vector) 1))]
     (- 
@@ -623,7 +622,8 @@
    #(compute-float-table-row %1)
    (enumerate-bits (+ (:s config) (:e config) (:f config)))))
 
-;(complete-whole-float-table {:s 1 :e 2 :f 2}) ;solves the problem!
+
+(complete-whole-float-table {:s 1 :e 2 :f 2}) ;solves the problem!
 
 
 ;Practice Problem 2.48
@@ -658,3 +658,43 @@
 ;=>(0 0 0 0 0 0 0 0 0 0 1 1 0 1 0 1 1 0 0 1 0 0 0 1 0 1 0 0 0 0 0 1)
 
 ; 101011001000101000001 is the float portion and it is the same the first 1 on the hex representation is dropped due to its implicitness
+
+
+;Problem 2.49
+;A) For a floating-point format with an n-bit fraction, give a formula for the smallest positive integer that cannot be represented exactly (because it would require an n+1-bit fraction to be exact). Assume the exponent field size k is large enough that the range of representable exponents does not provide a limitation for this problem.
+
+;To think about this, let me think about what the smallest fraction is possible.
+;The smallest fraction is 0...0 which is 1 + 0 = 1
+;The largest fraction possible is 2^k-1/2^k which yields M = 1 + 2^k-1/2^k
+
+;Answer 2^n+1 + 1, I was going to say 2^n + 1, but f is truncated.
+
+
+;B) What is the numeric value of this integer for single-precision format (n = 23)?
+(+ (Math/pow 2 (+ 23 1)) 1)
+
+;1.6777217E7
+
+;Problem 2.50
+;Show how the following binary fractional values would be rounded to the nearest half (1 bit to the right of the binary point), according to the round-to-even rule. In each case, show the numeric values, both before and after rounding.
+
+
+;A) 10.010 -> 10.0
+;B) 10.011 -> 10.1
+;C) 10.110 -> 11.0
+;D) 11.001 -> 11.0
+
+
+;Problem 2.54
+;A) x == (int)(double) x    -> true
+;B) x == (int)(float) x     -> true  ~ WRONG 
+;C) d == (double)(float) d  -> false && Numbers > 1.1578E77
+;D) f == (float)(double) f  -> true 
+;E) f == -(-f)              -> true
+;F) 1.0/2 == 1/2.0          -> false ~ WRONG, the numerator and denominator both get converted
+;G) d*d >= 0.0              -> true 
+;H) (f+d)-f == d            -> true ~ WRONG, for example when f is 1.0e20 and d is 1.0, the expression f+d will be rounded to 1.0e20, and so the expression on the left-hand side will evaluate to 0.0, while the right-hand side will be 1.0.
+
+
+
+ 

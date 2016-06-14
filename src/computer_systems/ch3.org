@@ -1,0 +1,265 @@
+* Ch3
+
+
+
+** 3.4.1 Operand Specifiers
+*** Problem 3.1
+		| Address | Value |   | Register | Value |
+		| +++++++ | +++++ |   | ++++++++ | +++++ |
+		|   0x100 |  0xFF |   | %eax     | 0x100 |
+		|   0x104 |  0xAB |   | %ecx     |   0x1 |
+		|   0x108 |  0x13 |   | %edx     |   0x3 |
+		|   0x10C |  0x11 |   |          |       |
+
+**** Fill in the following table showing the values for the indicated operands:
+		 | Operand        | My Value | Correct Value | Correct? |
+		 | -------------- | -------- | ------------- | -------- |
+		 | %eax           |    0x100 |         0x100 | Yes      |
+		 | 0x104          |     0xAB |          0xAB | Yes      |
+		 | $0x108         |    0x108 |         0x108 | Yes      |
+		 | (%eax)         |     0xFF |          0xFF | Yes      |
+		 | 4(%eax)        |     0xAB |          0xAB | Yes      |
+		 | 9(%eax,%edx)   |     0x11 |          0x11 | Yes      |
+		 | 260(%ecx,%edx) |     0x13 |          0x13 | Yes      |
+		 | 0xFC(,%ecx,4)  |     0x13 |          0xFF | No       |
+		 | (%eax,%edx,4)  |     0x11 |          0x11 | Yes      |
+
+**** Workspace
+	
+***** 260(%ecx,%edx)
+			#+BEGIN_SRC sh
+			printf "%x\n" 260
+			#+END_SRC
+
+			#+RESULTS:
+			: 104
+
+***** 0xFC(,%ecx,4)
+			#+BEGIN_SRC clojure
+			(format "%x" (+ 0xFC (* 4 0x3)))
+			#+END_SRC
+
+			#+RESULTS:
+			: 108
+
+***** (%eax,%edx,4)
+			#+BEGIN_SRC clojure
+      (format "%x" (+ 0x100 (* 0x3 4)))
+			#+END_SRC
+
+			#+RESULTS:
+			: 10c
+			
+**** Corrections
+***** 0xFC(,%ecx,4)
+			#+BEGIN_SRC clojure
+			(format "%x" (+ 0xFC (* 4 0x1)))
+			#+END_SRC
+
+			#+RESULTS:
+			: 100
+
+			Val for 0x100 = 0xFF
+
+
+
+** 3.4.2 Data Movement Instructions
+	[[~/computer-systems/imgs/stack-pointer.png]]
+
+*** Why is the stack pointer incrimented by 4?
+
+	 #+BEGIN_SRC clojure
+	 (/ 32 8)
+	 #+END_SRC
+
+	 #+RESULTS:
+	 : 4
+	 ..32 bits divided into bytes equals 4 bytes per 32bit word.
+	 Therefore an increment in 4 bytes is an increment in a 32bit word.
+	 
+
+** Problems 3.2 & 3.3 got deleted after a crash. I will not redo them.
+
+
+** Problem 3.4
+*** Useful imgs
+		[[~/computer-systems/imgs/mov-commands.png]]
+*** Solution
+		Sources: %eax, %ax, %al
+
+		| src_t         | dest_t        | instruction        | Problems I had        |
+		| ------------  | ------        | -----------        |                       |
+		| int           | int           | movl %eax, (%edx)  |                       |
+		| char          | int           | movsbl %al, (%edx) |                       |
+		| char          | unsigned      | movsbl %al, (%edx) | Why movsbl vs movzbl? |
+		| unsigned char | int           | movzbl %al, (%edx) |                       |
+		| int           | char          | movb %al, (%edx)   |                       |
+		| unsigned      | unsigned char | movb %al, (%edx)   |                       |
+		| unsigned      | int           | movl %eax, (%edx)  |                       |
+
+
+** Problem 3.5
+*** Summary
+**** Write a function with the following prototype:
+		 void decode1(int *xp, int *yp, int *zp);
+**** That has the following assembly language compilation:
+		 //xp at %ebp+8, yp at %ebp+12, zp at %ebp+16
+		 movl 8(%ebp), %edi
+		 movl 12(%ebp), %edx
+		 movl 16(%ebp), %ecx
+		 movl (%edx), %ebx
+		 movl (%ecx), %esi
+		 movl (%edi), %eax
+		 movl %eax, (%edx)
+		 movl %ebx, (%ecx)
+		 movl %esi, (%edi)
+
+*** Solution
+**** The Code
+		 #+BEGIN_SRC C++ :includes <stdio.h>
+       void decode1(int *xp, int *yp, int *zp){
+         int ty = *yp;
+         int tz = *zp;
+         int tx = *xp;
+
+         *yp = tx;
+         *zp = ty;
+         *xp = tz;
+       }
+
+       int main(){
+         int x = 1;
+         int y = 2;
+         int z = 3;
+         decode1(&x, &y, &z);
+
+         printf("x = %d, y = %d, z = %d\n", x, y ,z);
+       }
+		 #+END_SRC
+
+		 #+RESULTS:
+		 | x = 3 | y = 1 | z = 2 |
+
+
+
+
+
+		 
+** Problem 3.6
+*** Summary
+		Suppose register %eax holds value x and %ecx holds value y. Fill in the table below with formulas indicating the value that will be stored in register %edx for each of the given assembly code instructions:
+
+*** Solution
+		| Instruction               | Result     |
+		| ------------------        | ------     |
+		| leal 6(%eax), %edx        | x + 6      |
+		| leal (%eax,%ecx), %edx    | x + y      |
+		| leal (%eax,%ecx,4), %edx  | x + 4y     |
+		| leal 7(%eax,%eax,8), %edx | 9x + 7     |
+		| leal 0xA(,%ecx,4), %edx   | 4y + 10    |
+		| leal 9(%eax,%ecx,2), %edx | x + 2y + 9 |
+
+
+		
+
+** Problem 3.7
+*** Summary
+		Suppose the following values are stored in the following addresses and registers
+		
+		| Address | Value |   | Register | Value |
+		|         |       |   |          |       |
+		|   0x100 |  0xFF |   | %eax     | 0x100 |
+		|   0x104 |  0xAB |   | %ecx     |   0x1 |
+		|   0x108 |  0x13 |   | %edx     |   0x3 |
+		|   0x10C |  0x11 |   |          |       |
+		Fill in the following table showing the effects of the following instructions, both in terms of the register or memory location that will be updated and the resulting value:
+
+*** Table of Solutions
+		| Instruction             | Destination | Value | My problems                |
+		|                         |             |       |                            |
+		| addl %ecx,(%eax)        |       0x100 | 0x100 | I added to %eax not (%eax) |
+		| subl %edx,4(%eax)       |       0x104 |  0xA8 | I originally saw add       |
+		| imull $16,(%eax,%edx,4) |       0x10C | 0x110 |                            |
+		| incl 8(%eax)            |       0x108 |  0x14 |                            |
+		| decl %ecx               |        %ecx |   0x0 |                            |
+		| subl %edx,%eax          |        %eax |  0xFD |                            |
+		
+** Problem 3.8
+
+*** Summary
+		#+BEGIN_SRC C++
+      int shift_left2_rightn(int x, int n)
+      {
+          x <<= 2;
+          x >>= n;
+          return x;
+      }
+		#+END_SRC
+
+		The code that follows is a portion of the assembly code that performs the actual shifts and leaves the final value in register %eax. Two key instructions have been omitted. Parameters x and n are stored at memory locations with offsets 8 and 12, respectively, relative to the address in register %ebp.
+		
+*** Solution
+		
+		movl   8(%ebp), %eax
+		sall   2, %eax
+		movl   12(%ebp), %ecx
+		sarl   %cl, %eax
+
+** Problem 3.9
+
+*** Summary
+		The portion of the generated assembly code implementing these expressions is as
+follows:
+
+*** Assembly
+		movl 12(%ebp), %eax
+		xorl 8(%ebp), %eax
+		sarl $3, %eax
+		notl %eax
+		subl 16(%ebp), %eax
+	
+*** Code to generate it
+		#+BEGIN_SRC C++
+      int arith(int x, int y, int z){
+          int t1 = x ^ y;
+          int t2 = t1 >> 3;
+          int t3 = ~t2;
+          int t4 = t3 - z;
+          return t4;
+      }
+		#+END_SRC
+
+** Problem 3.10
+
+*** Summary
+		It is common to find assembly code lines of the form xorl %edx,%edx in code that was generated from C where no Exclusive-Or operations were present.
+		
+		A. Explain the effect of this particular Exclusive-Or instruction and what useful operation it implements.
+		
+		B. What would be the more straightforward way to express this operation in assembly code?
+		
+		C. Compare the number of bytes to encode these two different implementa- tions of the same operation.
+	
+*** Solutions
+		A. It sets the register to 0
+		B. movl $0, %edx
+		C. I don't know how they expect me to find this out! I guess by disassembling code.
+		
+** Problem 3.11
+
+*** Summary
+		Modify the assembly code shown for signed division so that it computes the unsigned quotient and remainder of numbers x and y and stores the results on the stack.￼
+		
+*** Solution
+		movl   8(%ebp), %eax
+		movl   $0, %edx
+		idivl  12(%ebp)
+		movl   %eax, 4(%esp)
+		movl   %edx, (%esp)
+
+** Problem 3.12
+	 #+BEGIN_SRC C++
+     void store_prod(num_t *dest, unsigned x, num_t y) {
+         ,*dest = x*y;
+     }
+	 #+END_SRC
